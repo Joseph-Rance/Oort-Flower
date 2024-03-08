@@ -7,4 +7,4 @@ source ../miniconda3/bin/activate fedscale
 bash run_scripts/launch.sh
 
 #RUN WITH:
-#srun -c 16 --gres=gpu:2 -w ngongotaha bash_scripts/slurm.sh
+#srun -c 16 --gres=gpu:2 -w ngongotaha bash run_scripts/slurm.sh
