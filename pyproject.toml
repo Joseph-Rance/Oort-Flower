@@ -1,16 +1,10 @@
-[build-system]
-requires = ["poetry-core>=1.4.0"]
-build-backend = "poetry.masonry.api"
-
 [tool.poetry]
 name = "project" # Do not change this
 version = "1.0.0"
-description = "CaMLSys Project"
+description = "L361 final project"
 license = "Apache-2.0"
-authors = ["The Flower Authors <hello@flower.dev>, Alexandru-Andrei Iacob <aai30@cam.ac.uk>, Lorenzo Sani <ls985@cam.ac.uk>"]
+authors = ["Joseph Rance <jr879@cam.ac.uk>, The Flower Authors <hello@flower.dev>, Alexandru-Andrei Iacob <aai30@cam.ac.uk>, Lorenzo Sani <ls985@cam.ac.uk>"]
 readme = "README.md"
-# homepage = ""
-# documentation = ""
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
