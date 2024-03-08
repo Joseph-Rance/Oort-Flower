@@ -1,0 +1,19 @@
+---
+num_rounds: 5
+num_total_clients: 10
+num_clients_per_round: 2
+num_evaluate_clients_per_round: 2
+
+enable_resampling: false
+
+cpus_per_client: 2
+gpus_per_client: 0
+
+seed: 1337
+
+load_saved_state: true
+server_round: null
+
+parameters_folder: null
+rng_folder: null
+history_folder: null

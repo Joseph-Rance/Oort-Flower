@@ -1,4 +1,5 @@
-"""Dispatch the MNIST functionality to project.main.
+"""Dispatch the speech functionality to project.main.
+see: https://blog.research.google/2017/08/launching-speech-commands-dataset.html
 
 The dispatch functions are used to
 dynamically select the correct functions from the task
@@ -69,7 +70,7 @@ def dispatch_train(
     )
 
     # Only consider not None and uppercase matches
-    if train_structure is not None and train_structure.upper() == "MNIST":
+    if train_structure is not None and train_structure.upper() == "speech":
         return train, test, get_fed_eval_fn
 
     # Cannot match, send to next dispatch in chain
@@ -127,22 +128,12 @@ def dispatch_data(cfg: DictConfig, **kwargs: Any) -> DataStructure | None:
             Path(partition_dir),
         )
 
-        # Case insensitive matches
-        if client_model_and_data.upper() == "MNIST_CNN":
-            return (
-                get_net,
-                client_dataloader_gen,
-                fed_dataloader_gen,
-                init_working_dir_default,
-            )
-        elif client_model_and_data.upper() == "MNIST_LR":
-            return (
-                get_logistic_regression,
-                client_dataloader_gen,
-                fed_dataloader_gen,
-                init_working_dir_default,
-            )
-
+        return (
+            get_net,
+            client_dataloader_gen,
+            fed_dataloader_gen,
+            init_working_dir_default,
+        )
     # Cannot match, send to next dispatch in chain
     return None
 

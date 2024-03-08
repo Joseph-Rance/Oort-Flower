@@ -1,0 +1,31 @@
+---
+model_and_data: RESNET_34
+train_structure: speech
+
+fit_config:
+  net_config: {}
+  dataloader_config:
+    batch_size: 4
+  run_config:
+    epochs: 1
+    learning_rate: 0.03
+  extra: {}
+
+eval_config:
+  net_config: {}
+  dataloader_config:
+    batch_size: 8
+  run_config: {}
+  extra: {}
+
+fed_test_config:
+  net_config: {}
+  dataloader_config:
+    batch_size: 8
+  run_config: {}
+  extra: {}
+
+net_config_initial_parameters: {}
+
+fit_metrics: [train_loss, train_accuracy]
+evaluate_metrics: [test_accuracy]

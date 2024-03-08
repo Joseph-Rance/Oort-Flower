@@ -1,0 +1,14 @@
+---
+dataset_dir: ./data/google_speech
+
+partition_dir: ./data/google_speech_partitioned
+
+num_clients: 10
+
+val_ratio: 0.1
+
+seed: 1337
+
+#iid: false
+#power_law: true
+#balance: false
