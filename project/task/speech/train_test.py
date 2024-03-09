@@ -16,7 +16,13 @@ from project.task.default.train_test import (
 from project.task.default.train_test import (
     get_on_fit_config_fn as get_default_on_fit_config_fn,
 )
-from project.types.common import IsolatedRNG
+from project.types.common import (
+    FedDataloaderGen,
+    FedEvalFN,
+    IsolatedRNG,
+    NetGen,
+    TestFunc,
+)
 
 
 class TrainConfig(BaseModel):
@@ -83,7 +89,7 @@ def train(  # pylint: disable=too-many-arguments
     optimizer = torch.optim.SGD(
         net.parameters(),
         lr=config.learning_rate,
-        weight_decay=0.001,
+        weight_decay=0,
     )
 
     final_epoch_per_sample_loss = 0.0
@@ -199,9 +205,30 @@ def test(
         },
     )
 
+def get_fed_eval_fn(
+    net_generator: NetGen,
+    fed_dataloader_generator: FedDataloaderGen,
+    test_func: TestFunc,
+    _config: dict,
+    working_dir: Path,
+    rng_tuple: IsolatedRNG,
+) -> FedEvalFN | None:
+    """No Federated evaluation => skip this function
+    """
+
+    def fed_eval_fn(
+        _server_round: int,
+        parameters: NDArrays,
+        fake_config: dict,
+    ) -> tuple[float, dict] | None:
+        """(Don't) evaluate the model on the given data.
+        """
+
+        return 0., {"accuracy": 0.}
+
+    return fed_eval_fn
 
 # Use defaults as they are completely determined
-# by the other functions defined in mnist_classification
-get_fed_eval_fn = get_default_fed_eval_fn
+# by the other functions defined in defaults
 get_on_fit_config_fn = get_default_on_fit_config_fn
 get_on_evaluate_config_fn = get_default_on_evaluate_config_fn

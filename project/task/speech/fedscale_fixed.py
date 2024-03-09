@@ -20,6 +20,7 @@ import librosa
 
 import torch
 from torch.utils.data import Dataset
+from torchvision import transforms
 
 import fedscale.cloud.config_parser as parser
 

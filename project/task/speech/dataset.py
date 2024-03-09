@@ -112,14 +112,16 @@ def get_dataloader_generators(
             return DataLoader(
                 torch.load(partition_dir / "train.pt"),
                 batch_size=config.batch_size,
-                shuffle=not test,
+                shuffle=True,
                 generator=torch_cpu_generator,
             )
 
+        # load train twice since no federated testing. Dataset is small enough for this
+        # not to be such a waste
         return DataLoader(
-            torch.load(partition_dir / "test.pt"),
+            torch.load(partition_dir / "train.pt"),
             batch_size=config.batch_size,
-            shuffle=not test,
+            shuffle=False,
             generator=torch_cpu_generator,
         )
 

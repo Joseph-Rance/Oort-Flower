@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 
 import hydra
+from omegaconf import DictConfig, OmegaConf
 import torch
 from flwr.common.logger import log
 
@@ -14,7 +15,7 @@ from project.task.speech.fedscale_fixed import init_dataset
 
 @hydra.main(
     config_path="../../conf",
-    config_name="mnist",
+    config_name="speech",
     version_base=None,
 )
 def download_and_preprocess(cfg: DictConfig) -> None:
@@ -37,7 +38,7 @@ def download_and_preprocess(cfg: DictConfig) -> None:
     parser.args.num_class = 35
     parser.args.data_dir = Path(cfg.dataset.dataset_dir)
 
-    trainset, testset = fllibs.init_dataset()
+    trainset, testset = init_dataset()
 
     # use predetermined, "realistic" dataset split
     client_datasets = DataPartitioner(data=trainset, args=parser.args, numOfClass=parser.args.num_class)
@@ -60,7 +61,8 @@ def download_and_preprocess(cfg: DictConfig) -> None:
 
     # Save the client datasets
     # validation is commented in order to follow setup in Oort paper
-    for idx, client_dataset in enumerate(client_datasets):
+    for idx in range(client_datasets.getClientLen()):
+        client_dataset = client_datasets.use(idx, istest=False)
         client_dir = partition_dir / f"client_{idx}"
         client_dir.mkdir(parents=True, exist_ok=True)
 
