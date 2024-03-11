@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import cast
 
 import torch
+from flwr.common import NDArrays
 from pydantic import BaseModel
 from torch import nn
 from torch.utils.data import DataLoader

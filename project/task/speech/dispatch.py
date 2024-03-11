@@ -70,7 +70,7 @@ def dispatch_train(
     )
 
     # Only consider not None and uppercase matches
-    if train_structure is not None and train_structure.upper() == "speech":
+    if train_structure is not None and train_structure.upper() == "SPEECH":
         return train, test, get_fed_eval_fn
 
     # Cannot match, send to next dispatch in chain

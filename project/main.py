@@ -153,6 +153,23 @@ def main(cfg: DictConfig) -> None:
             # as specified in the config
             init_working_dir(working_dir, results_dir)
 
+
+            from flwr.common import ndarrays_to_parameters
+            from project.fed.utils.utils import generic_get_parameters, generic_set_parameters
+            from collections import OrderedDict
+            import torch
+
+            net = net_generator({}, 0)
+            params_dict = zip(
+                net.state_dict().keys(),
+                [val.cpu().numpy() for _, val in net.state_dict().items()],
+                strict=True,
+            )
+            state_dict = OrderedDict(
+                {k: torch.Tensor(v) for k, v in net.state_dict()},
+            )
+            net.load_state_dict(state_dict, strict=True)
+
             # Parameters/rng/history state for the strategy
             # Uses the path to the saved initial parameters and state
             # If none are available, new ones will be generated
