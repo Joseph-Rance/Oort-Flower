@@ -5,23 +5,23 @@ train_structure: speech
 fit_config:
   net_config: {}
   dataloader_config:
-    batch_size: 4
+    batch_size: 16
   run_config:
-    epochs: 1
-    learning_rate: 0.03
+    epochs: 20
+    learning_rate: 0.04
   extra: {}
 
 eval_config:
   net_config: {}
   dataloader_config:
-    batch_size: 8
+    batch_size: 16
   run_config: {}
   extra: {}
 
 fed_test_config:
   net_config: {}
   dataloader_config:
-    batch_size: 8
+    batch_size: 16
   run_config: {}
   extra: {}
 

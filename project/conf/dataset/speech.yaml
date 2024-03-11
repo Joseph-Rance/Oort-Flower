@@ -3,9 +3,9 @@ dataset_dir: ./data/google_speech
 
 partition_dir: ./data/google_speech_partitioned
 
-num_clients: 10
+num_clients: 20
 
-val_ratio: 0.1
+val_ratio: 0
 
 seed: 1337
 

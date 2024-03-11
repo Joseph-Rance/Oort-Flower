@@ -1,8 +1,8 @@
 ---
-num_rounds: 5
-num_total_clients: 10
-num_clients_per_round: 2
-num_evaluate_clients_per_round: 2
+num_rounds: 20
+num_total_clients: 2167
+num_clients_per_round: 10
+num_evaluate_clients_per_round: 0
 
 enable_resampling: false
 
