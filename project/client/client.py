@@ -175,6 +175,7 @@ class Client(fl.client.NumPyClient):
         EvalRes
             The loss, the number of samples used and the metrics.
         """
+        return 0., 1, {"accuracy": 0.}
         config: ClientConfig = ClientConfig(**_config)
         del _config
 
