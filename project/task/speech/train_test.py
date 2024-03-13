@@ -25,6 +25,10 @@ from project.types.common import (
     TestFunc,
 )
 
+from project.client.client import ClientConfig
+from project.fed.utils.utils import generic_set_parameters
+from project.utils.utils import obtain_device
+
 
 class TrainConfig(BaseModel):
     """Training configuration, allows '.' member access and static checking.
@@ -95,7 +99,7 @@ def train(  # pylint: disable=too-many-arguments
 
     final_epoch_per_sample_loss = 0.0
     num_correct = 0
-    for _ in range(config.epochs):
+    for i in range(config.epochs):
         final_epoch_per_sample_loss = 0.0
         num_correct = 0
         for data, target in trainloader:
@@ -115,6 +119,10 @@ def train(  # pylint: disable=too-many-arguments
             num_correct += (output.max(1)[1] == target).clone().detach().sum().item()
             loss.backward()
             optimizer.step()
+
+            from logging import INFO
+            from flwr.common.logger import log
+            log(INFO, (i, loss.item()))
 
     return len(cast(Sized, trainloader.dataset)), {
         "train_loss": final_epoch_per_sample_loss
@@ -193,6 +201,7 @@ def test(
                 ),
                 labels.to(config.device),
             )
+            images = images.reshape((-1, 1, 32, 32))
             outputs = net(images)
             per_sample_loss += criterion(
                 outputs,

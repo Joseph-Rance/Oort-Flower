@@ -1,13 +1,13 @@
 ---
-num_rounds: 20
+num_rounds: 100
 num_total_clients: 2167
-num_clients_per_round: 10
+num_clients_per_round: 30
 num_evaluate_clients_per_round: 0
 
 enable_resampling: false
 
 cpus_per_client: 2
-gpus_per_client: 0
+gpus_per_client: 0.1
 
 seed: 1337
 
