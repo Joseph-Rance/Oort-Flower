@@ -120,10 +120,6 @@ def train(  # pylint: disable=too-many-arguments
             loss.backward()
             optimizer.step()
 
-            from logging import INFO
-            from flwr.common.logger import log
-            log(INFO, (i, loss.item()))
-
     return len(cast(Sized, trainloader.dataset)), {
         "train_loss": final_epoch_per_sample_loss
         / len(cast(Sized, trainloader.dataset)),

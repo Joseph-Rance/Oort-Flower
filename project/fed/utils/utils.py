@@ -64,7 +64,7 @@ def generic_set_parameters(
         strict=True,
     )
     state_dict = OrderedDict(
-        {k: torch.Tensor(v if not to_copy else v.copy()) for k, v in params_dict},
+        {k: torch.tensor(v if not to_copy else v.copy()) for k, v in params_dict},
     )
     net.load_state_dict(state_dict, strict=True)
 

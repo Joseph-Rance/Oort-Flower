@@ -6,6 +6,7 @@ wget https://raw.githubusercontent.com/SymbioticLab/FedScale/master/benchmark/da
 mkdir data
 bash download.sh download speech
 
+source /nfs-share/jr897/miniconda3/bin/activate oort
 python -m project.task.speech.dataset_preparation
 
 # 2. download the client traces

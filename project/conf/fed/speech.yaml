@@ -1,7 +1,7 @@
 ---
 num_rounds: 100
 num_total_clients: 2167
-num_clients_per_round: 30
+num_clients_per_round: 50
 num_evaluate_clients_per_round: 0
 
 enable_resampling: false
