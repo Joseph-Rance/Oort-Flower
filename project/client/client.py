@@ -152,6 +152,15 @@ class Client(fl.client.NumPyClient):
             metrics,
         )
 
+    def _get_lr(self, lr, training_round) -> float:
+        if training_round < 50:
+            return lr
+        if 49 < training_round < 90:
+            return lr * 0.2
+        if training_round < 100:
+            return lr * 0.01
+        return lr * 0.001
+
     def evaluate(
         self,
         parameters: NDArrays,
@@ -191,6 +200,12 @@ class Client(fl.client.NumPyClient):
             config.dataloader_config,
             self.rng_tuple,
         )
+
+        config.run_config = copy(config.run_config)  # avoid mutation
+
+        # applies schedule to lr
+        config.run_config["learning_rate"] = self._get_lr(config.run_config["learning_rate"], config.extra["server_round"])
+
         loss, num_samples, metrics = self.test(
             self.net,
             testloader,

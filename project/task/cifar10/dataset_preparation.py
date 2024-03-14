@@ -18,6 +18,156 @@ from torchvision.datasets import CIFAR10
 from torchvision import transforms
 
 
+def _sort_by_class(
+    trainset: Dataset,
+) -> Dataset:
+    """Sort dataset by class/label.
+
+    Parameters
+    ----------
+    trainset : Dataset
+        The training dataset that needs to be sorted.
+
+    Returns
+    -------
+    Dataset
+        The sorted training dataset.
+    """
+    class_counts = np.bincount(trainset.targets)
+    idxs = trainset.targets.argsort()  # sort targets in ascending order
+
+    tmp = []  # create subset of smallest class
+    tmp_targets = []  # same for targets
+
+    start = 0
+    for count in np.cumsum(class_counts):
+        tmp.append(
+            Subset(
+                trainset,
+                cast(
+                    Sequence[int],
+                    idxs[start : int(count + start)],
+                ),
+            ),
+        )  # add rest of classes
+        tmp_targets.append(
+            trainset.targets[idxs[start : int(count + start)]],
+        )
+        start += count
+    sorted_dataset = cast(
+        Dataset,
+        ConcatDataset(tmp),
+    )  # concat dataset
+    sorted_dataset.targets = torch.cat(
+        tmp_targets,
+    )  # concat targets
+    return sorted_dataset
+
+# pylint: disable=too-many-locals, too-many-arguments
+def _power_law_split(
+    sorted_trainset: Dataset,
+    num_partitions: int,
+    num_labels_per_partition: int = 2,
+    min_data_per_partition: int = 10,
+    mean: float = 0.0,
+    sigma: float = 2.0,
+) -> list[Subset]:
+    """Partition the dataset following a power-law distribution. It follows the.
+
+    implementation of Li et al 2020: https://arxiv.org/abs/1812.06127 with default
+    values set accordingly.
+
+    Parameters
+    ----------
+    sorted_trainset : Dataset
+        The training dataset sorted by label/class.
+    num_partitions: int
+        Number of partitions to create
+    num_labels_per_partition: int
+        Number of labels to have in each dataset partition. For
+        example if set to two, this means all training examples in
+        a given partition will belong to the same two classes. default 2
+    min_data_per_partition: int
+        Minimum number of datapoints included in each partition, default 10
+    mean: float
+        Mean value for LogNormal distribution to construct power-law, default 0.0
+    sigma: float
+        Sigma value for LogNormal distribution to construct power-law, default 2.0
+
+    Returns
+    -------
+    Dataset
+        The partitioned training dataset.
+    """
+    targets = sorted_trainset.targets
+    full_idx = list(range(len(targets)))
+
+    class_counts = np.bincount(sorted_trainset.targets)
+    labels_cs = np.cumsum(class_counts)
+    labels_cs = [0] + labels_cs[:-1].tolist()
+
+    partitions_idx: list[list[int]] = []
+    num_classes = len(np.bincount(targets))
+    hist = np.zeros(num_classes, dtype=np.int32)
+
+    # assign min_data_per_partition
+    min_data_per_class = int(
+        min_data_per_partition / num_labels_per_partition,
+    )
+    for u_id in range(num_partitions):
+        partitions_idx.append([])
+        for cls_idx in range(num_labels_per_partition):
+            # label for the u_id-th client
+            cls = (u_id + cls_idx) % num_classes
+            # record minimum data
+            indices = list(
+                full_idx[
+                    labels_cs[cls]
+                    + hist[cls] : labels_cs[cls]
+                    + hist[cls]
+                    + min_data_per_class
+                ],
+            )
+            partitions_idx[-1].extend(indices)
+            hist[cls] += min_data_per_class
+
+    # add remaining images following power-law
+    probs = np.random.lognormal(
+        mean,
+        sigma,
+        (
+            num_classes,
+            int(num_partitions / num_classes),
+            num_labels_per_partition,
+        ),
+    )
+    remaining_per_class = class_counts - hist
+    # obtain how many samples each partition should be assigned for each of the
+    # labels it contains
+    # pylint: disable=too-many-function-args
+    probs = (
+        remaining_per_class.reshape(-1, 1, 1)
+        * probs
+        / np.sum(probs, (1, 2), keepdims=True)
+    )
+
+    for u_id in range(num_partitions):
+        for cls_idx in range(num_labels_per_partition):
+            cls = (u_id + cls_idx) % num_classes
+            count = int(
+                probs[cls, u_id // num_classes, cls_idx],
+            )
+
+            # add count of specific class to partition
+            indices = full_idx[
+                labels_cs[cls] + hist[cls] : labels_cs[cls] + hist[cls] + count
+            ]
+            partitions_idx[u_id].extend(indices)
+            hist[cls] += count
+
+    # construct partition subsets
+    return [Subset(sorted_trainset, p) for p in partitions_idx]
+
 @hydra.main(
     config_path="../../conf",
     config_name="cifar10",
@@ -51,9 +201,21 @@ def download_and_preprocess(cfg: DictConfig) -> None:
     train = CIFAR10("/datasets/CIFAR10", train=True, transform=train_transform, download=False)
     test = CIFAR10("/datasets/CIFAR10", train=False, transform=test_transform, download=False)
 
-    partitions = [int(len(train)/cfg.dataset.num_clients)]*cfg.dataset.num_clients
-    partitions[-1] += len(train) - sum(partitions)
-    train_sets = random_split(train, partitions)
+    #partitions = [int(len(train)/cfg.dataset.num_clients)]*cfg.dataset.num_clients
+    #partitions[-1] += len(train) - sum(partitions)
+    #train_sets = random_split(train, partitions)
+
+    trainset_sorted = _sort_by_class(train)
+    train_sets = _power_law_split(
+        trainset_sorted,
+        num_partitions=cfg.dataset.num_clients,
+        num_labels_per_partition=5,
+        min_data_per_partition=100,
+        mean=0.0,
+        sigma=2.0,
+    )
+
+    print([len(i) for i in train_sets])
 
     # 2. Save the datasets
     # unnecessary for this small dataset, but useful for large datasets

@@ -90,10 +90,6 @@ def train(  # pylint: disable=too-many-arguments
     net.to(config.device)
     net.train()
 
-    from logging import INFO
-    from flwr.common.logger import log
-    log(INFO, config)
-
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(
         net.parameters(),
@@ -202,7 +198,6 @@ def test(
                 ),
                 labels.to(config.device),
             )
-            images = images.reshape((-1, 1, 32, 32))
             outputs = net(images)
             per_sample_loss += criterion(
                 outputs,
