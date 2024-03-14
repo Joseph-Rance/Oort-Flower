@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #  1. download the data
+# NOTE: must be run with slurm to access /datasets (remember to not run with GPUs!)
 
 source /nfs-share/jr897/miniconda3/bin/activate oort
 python -m project.task.cifar10.dataset_preparation

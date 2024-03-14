@@ -3,7 +3,7 @@ dataset_dir: ./data/cifar10
 
 partition_dir: ./data/cifar10
 
-num_clients: 10
+num_clients: 30
 
 val_ratio: 0
 

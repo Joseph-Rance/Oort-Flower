@@ -13,10 +13,13 @@ from flwr.common.logger import log
 import fedscale.cloud.config_parser as parser
 from fedscale.dataloaders.divide_data import DataPartitioner
 
-from torch.utils.data import Dataset, random_split
+from torch.utils.data import Dataset, Subset, random_split, ConcatDataset
 from torchvision.datasets import CIFAR10
 from torchvision import transforms
 
+import numpy as np
+from typing import cast
+from collections.abc import Sequence
 
 def _sort_by_class(
     trainset: Dataset,
@@ -34,7 +37,7 @@ def _sort_by_class(
         The sorted training dataset.
     """
     class_counts = np.bincount(trainset.targets)
-    idxs = trainset.targets.argsort()  # sort targets in ascending order
+    idxs = np.array(trainset.targets).argsort()  # sort targets in ascending order
 
     tmp = []  # create subset of smallest class
     tmp_targets = []  # same for targets
@@ -51,16 +54,16 @@ def _sort_by_class(
             ),
         )  # add rest of classes
         tmp_targets.append(
-            trainset.targets[idxs[start : int(count + start)]],
+            np.array(trainset.targets)[idxs[start : int(count + start)]],
         )
         start += count
     sorted_dataset = cast(
         Dataset,
         ConcatDataset(tmp),
     )  # concat dataset
-    sorted_dataset.targets = torch.cat(
+    sorted_dataset.targets = np.concatenate(
         tmp_targets,
-    )  # concat targets
+    ).tolist()  # concat targets
     return sorted_dataset
 
 # pylint: disable=too-many-locals, too-many-arguments
