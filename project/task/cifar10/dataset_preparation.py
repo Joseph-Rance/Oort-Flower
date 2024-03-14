@@ -1,4 +1,4 @@
-"""Functions for Google speech dataset download and processing."""
+"""Functions for CIFAR10 dataset download and processing."""
 
 import logging
 from pathlib import Path
@@ -13,8 +13,6 @@ from flwr.common.logger import log
 import fedscale.cloud.config_parser as parser
 from fedscale.dataloaders.divide_data import DataPartitioner
 
-from project.task.speech.fedscale_fixed import init_dataset
-
 from torch.utils.data import Dataset, random_split
 from torchvision.datasets import CIFAR10
 from torchvision import transforms
@@ -22,7 +20,7 @@ from torchvision import transforms
 
 @hydra.main(
     config_path="../../conf",
-    config_name="speech",
+    config_name="cifar10",
     version_base=None,
 )
 def download_and_preprocess(cfg: DictConfig) -> None:
@@ -43,7 +41,7 @@ def download_and_preprocess(cfg: DictConfig) -> None:
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
-    ]),
+    ])
 
     test_transform = transforms.Compose([
         transforms.ToTensor(),
@@ -53,7 +51,9 @@ def download_and_preprocess(cfg: DictConfig) -> None:
     train = CIFAR10("/datasets/CIFAR10", train=True, transform=train_transform, download=False)
     test = CIFAR10("/datasets/CIFAR10", train=False, transform=test_transform, download=False)
 
-    train_sets = random_split(train, [1/cfg.dataset.num_clients]*cfg.dataset.num_clients)
+    partitions = [int(len(train)/cfg.dataset.num_clients)]*cfg.dataset.num_clients
+    partitions[-1] += len(train) - sum(partitions)
+    train_sets = random_split(train, partitions)
 
     # 2. Save the datasets
     # unnecessary for this small dataset, but useful for large datasets
@@ -68,7 +68,7 @@ def download_and_preprocess(cfg: DictConfig) -> None:
     # Save the client datasets
     # validation is commented in order to follow setup in Oort paper
     for idx in range(cfg.dataset.num_clients):
-        client_dataset = client_datasets.use(idx, istest=False)
+        client_dataset = train_sets[idx]
         client_dir = partition_dir / f"client_{idx}"
         client_dir.mkdir(parents=True, exist_ok=True)
 

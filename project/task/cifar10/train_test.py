@@ -116,7 +116,6 @@ def train(  # pylint: disable=too-many-arguments
                 target.to(config.device),
             )
             optimizer.zero_grad()
-            data = data.reshape((-1, 1, 32, 32))
             if data.shape[0] == 1:
                 continue  # skip batches of length for batch norm
             output = net(data)

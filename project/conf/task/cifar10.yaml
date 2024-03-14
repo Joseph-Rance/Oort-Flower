@@ -1,5 +1,5 @@
 ---
-model_and_data: RESNET_34
+model_and_data: RESNET_50
 train_structure: cifar10
 
 fit_config:

@@ -118,7 +118,8 @@ def dispatch_data(cfg: DictConfig, **kwargs: Any) -> DataStructure | None:
 
     # Only consider situations where both are not None
     # otherwise data loading would fail later
-    if client_model_and_data is not None and partition_dir is not None:
+    if client_model_and_data is not None and partition_dir is not None \
+            and client_model_and_data.upper() == "RESNET_34"::
         # Obtain the dataloader generators
         # for the provided partition dir
         (
