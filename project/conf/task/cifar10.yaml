@@ -1,6 +1,6 @@
 ---
 model_and_data: RESNET_34
-train_structure: image
+train_structure: cifar10
 
 fit_config:
   net_config: {}

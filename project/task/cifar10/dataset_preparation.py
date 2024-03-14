@@ -15,7 +15,9 @@ from fedscale.dataloaders.divide_data import DataPartitioner
 
 from project.task.speech.fedscale_fixed import init_dataset
 
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset, random_split
+from torchvision.datasets import CIFAR10
+from torchvision import transforms
 
 
 @hydra.main(
@@ -48,11 +50,8 @@ def download_and_preprocess(cfg: DictConfig) -> None:
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])
 
-    train = CIFAR10("data/cifar/train", train=True, transform=train_transform,
-                    download=download and not isdir(path))
-
-    test = CIFAR10("data/cifar/test", train=False, transform=test_transform,
-                   download=download and not isdir(path))
+    train = CIFAR10("/datasets/CIFAR10", train=True, transform=train_transform, download=False)
+    test = CIFAR10("/datasets/CIFAR10", train=False, transform=test_transform, download=False)
 
     train_sets = random_split(train, [1/cfg.dataset.num_clients]*cfg.dataset.num_clients)
 

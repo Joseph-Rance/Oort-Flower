@@ -25,7 +25,7 @@ wandb_resume: true
 wandb_id: null
 wandb:
   setup:
-    project: speech
+    project: cifar10
     tags: ['strategy_${strategy.name}', 'seed_${fed.seed}']
     entity: null
     mode: online

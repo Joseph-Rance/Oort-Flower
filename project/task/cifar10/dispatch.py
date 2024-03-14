@@ -1,5 +1,4 @@
-"""Dispatch the speech functionality to project.main.
-see: https://blog.research.google/2017/08/launching-speech-commands-dataset.html
+"""Dispatch the cifar10 functionality to project.main.
 
 The dispatch functions are used to
 dynamically select the correct functions from the task
@@ -30,9 +29,9 @@ from project.task.default.dispatch import (
     dispatch_config as dispatch_default_config,
     init_working_dir as init_working_dir_default,
 )
-from project.task.speech.dataset import get_dataloader_generators
-from project.task.speech.models import get_resnet_50
-from project.task.speech.train_test import get_fed_eval_fn, test, train
+from project.task.cifar10.dataset import get_dataloader_generators
+from project.task.cifar10.models import get_resnet_50
+from project.task.cifar10.train_test import get_fed_eval_fn, test, train
 from project.types.common import DataStructure, TrainStructure
 
 
@@ -70,7 +69,7 @@ def dispatch_train(
     )
 
     # Only consider not None and uppercase matches
-    if train_structure is not None and train_structure.upper() == "SPEECH":
+    if train_structure is not None and train_structure.upper() == "CIFAR10":
         return train, test, get_fed_eval_fn
 
     # Cannot match, send to next dispatch in chain

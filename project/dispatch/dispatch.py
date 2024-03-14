@@ -13,13 +13,14 @@ from project.task.default.dispatch import dispatch_config as dispatch_default_co
 from project.task.default.dispatch import dispatch_data as dispatch_default_data
 from project.task.default.dispatch import dispatch_train as dispatch_default_train
 from project.task.speech.dispatch import (
-    dispatch_config as dispatch_speech_config,
-)
-from project.task.speech.dispatch import (
     dispatch_data as dispatch_speech_data,
-)
-from project.task.speech.dispatch import (
+    dispatch_config as dispatch_speech_config,
     dispatch_train as dispatch_speech_train,
+)
+from project.task.cifar10.dispatch import (
+    dispatch_data as dispatch_cifar10_data,
+    dispatch_config as dispatch_cifar10_config,
+    dispatch_train as dispatch_cifar10_train,
 )
 from project.types.common import ConfigStructure, DataStructure, TrainStructure
 
@@ -48,6 +49,7 @@ def dispatch_train(cfg: DictConfig, **kwargs: Any) -> TrainStructure:
     task_train_functions: list[Callable[..., TrainStructure | None]] = [
         dispatch_default_train,
         dispatch_speech_train,
+        dispatch_cifar10_train,
     ]
 
     # Match the first function which does not return None
@@ -85,6 +87,7 @@ def dispatch_data(cfg: DictConfig, **kwargs: Any) -> DataStructure:
     task_data_dependent_functions: list[Callable[..., DataStructure | None]] = [
         dispatch_speech_data,
         dispatch_default_data,
+        dispatch_cifar10_data
     ]
 
     # Match the first function which does not return None
@@ -124,6 +127,7 @@ def dispatch_config(cfg: DictConfig, **kwargs: Any) -> ConfigStructure:
     task_config_functions: list[Callable[..., ConfigStructure | None]] = [
         dispatch_speech_config,
         dispatch_default_config,
+        dispatch_cifar10_config
     ]
 
     # Match the first function which does not return None
