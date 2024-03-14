@@ -1,0 +1,14 @@
+---
+dataset_dir: ./data/cifar10
+
+partition_dir: ./data/cifar10
+
+num_clients: 10
+
+val_ratio: 0
+
+seed: 1337
+
+#iid: false
+#power_law: true
+#balance: false

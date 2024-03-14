@@ -1,0 +1,37 @@
+---
+defaults:
+  - _self_
+  - task: cifar10
+  - fed: cifar10
+  - strategy: fedavg # fedyogi
+  - dataset: cifar10
+
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+working_dir: null
+to_save_once: [yaml, log, wandb]
+to_save_per_round: [parameters, rng, history]
+save_frequency: 1
+to_restore: []
+to_clean_once: [history, parameters, yaml, log, rng, history]
+
+use_wandb: false
+debug_clients:
+  all: false
+  one: true
+wandb_resume: true
+wandb_id: null
+wandb:
+  setup:
+    project: speech
+    tags: ['strategy_${strategy.name}', 'seed_${fed.seed}']
+    entity: null
+    mode: online
+
+ray_address: null
+ray_redis_password: null
+ray_node_ip_address: null
+
+file_limit: 250
