@@ -5,6 +5,7 @@ Make sure the model and dataset are not loaded before the fit function.
 
 import random
 from pathlib import Path
+import pickle
 
 import flwr as fl
 from flwr.common import NDArrays
@@ -25,9 +26,40 @@ from project.types.common import (
     NetGen,
     TestFunc,
     TrainFunc,
+    Scalar,
 )
 from project.utils.utils import obtain_device
 
+
+class IntentionalDropoutError(BaseException): pass
+
+def is_active(
+    client_trace: dict[str, Any],
+    current_time: int,
+) -> bool:
+
+    transformed_time = current_time % client_trace["finish_time"]
+
+    # use weak inequality to include the round listed as the first
+    active = [a for a in client["active"] if a <= transformed_time]
+    last_active = max(active) if active else -2
+
+    inactive = [a for a in client["inactive"] if a <= transformed_time]
+    last_inactive = max(inactive) if inactive else -1
+
+    return last_active > last_inactive
+
+def get_client_completion_time(
+    client_capacity: dict[str, float],
+    computation_factor: float,
+    communication_factor: float,
+    n_data: int
+) -> dict[str, float]:
+
+    return {
+        "computation": computation_factor * n_data / client_capacity["computation"],
+        "communication": communication_factor / client_capacity["communication"],
+    }
 
 class ClientConfig(BaseModel):
     """Fit/eval config, allows '.' member access and static checking.
@@ -64,6 +96,8 @@ class Client(fl.client.NumPyClient):
         train: TrainFunc,
         test: TestFunc,
         client_seed: int,
+        client_trace: dict[str: Any],
+        client_capacity: dict[str: Any]
     ) -> None:
         """Initialize the client.
 
@@ -95,10 +129,20 @@ class Client(fl.client.NumPyClient):
         self.train = train
         self.test = test
 
+        self.client_capacity = client_capacity
+        self.client_trace = client_trace
+
         # For deterministic client execution
         # The client_seed is generated from a specific Generator
         self.client_seed = client_seed
         self.rng_tuple = get_isolated_rng_tuple(self.client_seed, obtain_device())
+
+        self.properties: dict[str, Scalar] = {
+            "tensor_type": "numpy.ndarray",
+            "cid": self.cid,
+            "device_capacity": self.client_capacity,
+            "traces": self.client_trace,
+        }
 
     def fit(
         self,
@@ -123,6 +167,10 @@ class Client(fl.client.NumPyClient):
         FitRes
             The parameters after training, the number of samples used and the metrics.
         """
+
+        current_virtual_clock = _config["current_virtual_clock"]
+        del _config["current_virtual_clock"]
+
         config: ClientConfig = ClientConfig(**_config)
         del _config
 
@@ -146,6 +194,17 @@ class Client(fl.client.NumPyClient):
             self.rng_tuple,
         )
 
+        times = get_client_completion_time(
+            single_client_device_capacity=self.client_capacity,
+            computation_factor: 1,
+            communication_factor: 1,
+            n_data = 32 * config.run_config["epochs"]
+        )
+        metrics["client_completion_time"] = times["communication"] + times["computation"]
+
+        if not is_active(self.client_trace, int(current_virtual_clock + total_time)):
+            raise IntentionalDropoutError(f"Client {self.cid} is no longer active")
+
         return (
             self.get_parameters({}),
             num_samples,
@@ -153,11 +212,11 @@ class Client(fl.client.NumPyClient):
         )
 
     def _get_lr(self, lr, training_round) -> float:
-        if training_round < 50:
+        if training_round < 50*5:
             return lr
-        if 49 < training_round < 90:
+        if 49 < training_round < 90*5:
             return lr * 0.2
-        if training_round < 100:
+        if training_round < 100*5:
             return lr * 0.01
         return lr * 0.001
 
@@ -324,6 +383,12 @@ def get_client_generator(
         The function which creates a new Client.
     """
 
+    with open("data/client_behave_trace.pkl", 'rb') as fin:
+        client_traces = pickle.load(fin)
+
+    with open("data/client_device_capacity.pkl", 'rb') as fin:
+        client_capacities = pickle.load(fin)
+
     def client_generator(cid: CID) -> Client:
         """Return a new Client.
 
@@ -345,6 +410,8 @@ def get_client_generator(
             train,
             test,
             client_seed=client_seed_generator.randint(0, 2**32 - 1),
+            client_trace: client_traces[int(cid)-1],  # for some reason there is no cid 0 in these
+            client_capacity: client_capacities[int(cid)-1]  #                  so reduce cids by 1
         )
 
     return client_generator

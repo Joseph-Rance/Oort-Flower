@@ -25,3 +25,4 @@ bash download.sh download open_images_detection
 # 2. download the client traces
 
 wget https://github.com/SymbioticLab/FedScale/raw/master/benchmark/dataset/data/device_info/client_behave_trace -O data/client_behave_trace.pkl
+wget https://github.com/SymbioticLab/FedScale/raw/master/benchmark/dataset/data/device_info/client_behave_capacity -O data/client_device_capacity.pkl

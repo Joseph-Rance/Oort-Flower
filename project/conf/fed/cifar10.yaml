@@ -1,6 +1,6 @@
 ---
-num_rounds: 120
-num_total_clients: 30
+num_rounds: 600
+num_total_clients: 50
 num_clients_per_round: 10
 num_evaluate_clients_per_round: 0
 
