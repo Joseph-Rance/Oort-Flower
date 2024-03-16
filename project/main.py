@@ -24,6 +24,7 @@ from omegaconf import DictConfig, OmegaConf
 from project.client.client import get_client_generator
 from project.dispatch.dispatch import dispatch_config, dispatch_data, dispatch_train
 from project.fed.server.active_client_manager import ActiveClientManager
+from project.fed.server.oort_client_manager import OortClientManager
 from project.fed.server.wandb_server import WandbServer
 from project.fed.utils.utils import (
     get_save_history_to_file,
@@ -194,6 +195,7 @@ def main(cfg: DictConfig) -> None:
             # Client manager that samples the same clients
             # For a given seed+checkpoint combination
             client_manager = ActiveClientManager()
+            #client_manager = OortClientManager()
 
             # Obtain the train/test func and the fed eval func
             # Change the cfg.task.train_structure str to change functionality

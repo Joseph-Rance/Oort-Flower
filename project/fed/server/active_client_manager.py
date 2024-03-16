@@ -33,6 +33,7 @@ class ActiveClientManager(SimpleClientManager):
         if min_num_clients is None:
             min_num_clients = num_clients
 
+        # wait for clients to be available
         self.wait_for(min_num_clients)
 
         cids = list(self.clients)
@@ -40,6 +41,7 @@ class ActiveClientManager(SimpleClientManager):
         for _ in range(server_round):
             random.shuffle(cids)
 
+        # get list of which clients are available *IN THE SIMULATUION*
         available_cids = []
 
         ins: GetPropertiesIns = GetPropertiesIns(config={

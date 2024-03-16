@@ -138,9 +138,6 @@ class Client(fl.client.NumPyClient):
         self.rng_tuple = get_isolated_rng_tuple(self.client_seed, obtain_device())
 
         self.properties: dict[str, Scalar] = {
-            "tensor_type": "numpy.ndarray",
-            "cid": self.cid,
-            "device_capacity": self.client_capacity,
             "traces": self.client_trace,
         }
 
