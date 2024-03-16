@@ -137,8 +137,17 @@ class Client(fl.client.NumPyClient):
         self.client_seed = client_seed
         self.rng_tuple = get_isolated_rng_tuple(self.client_seed, obtain_device())
 
+        self.utility = 0
+        self.time = 0
+
+        self.rounds = 0
+        self.last_sampled = None
+
         self.properties: dict[str, Scalar] = {
             "traces": self.client_trace,
+            "utility": self.utility
+            "time": self.time
+            "rounds": self.rounds
         }
 
     def fit(
@@ -195,12 +204,17 @@ class Client(fl.client.NumPyClient):
             single_client_device_capacity=self.client_capacity,
             computation_factor: 1,
             communication_factor: 1,
-            n_data = 32 * config.run_config["epochs"]
+            n_data=num_samples * config.run_config["epochs"]
         )
         metrics["client_completion_time"] = times["communication"] + times["computation"]
 
-        if not is_active(self.client_trace, int(current_virtual_clock + total_time)):
+        if not is_active(self.client_trace, int(current_virtual_clock + metrics["client_completion_time"])):
             raise IntentionalDropoutError(f"Client {self.cid} is no longer active")
+
+        self.last_sampled = current_virtual_clock
+        self.rounds += 1
+        self.utility = num_samples * metrics["train_loss"]
+        self.time = metrics["client_completion_time"]
 
         return (
             self.get_parameters({}),
