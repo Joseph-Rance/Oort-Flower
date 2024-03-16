@@ -56,9 +56,15 @@ def get_client_completion_time(
     n_data: int
 ) -> dict[str, float]:
 
+    '''
+    Computation is inference speed in ms/sample. A backward pass takes 2x the time as a forward pass.
+    Communication is network speed in kB/s. We assume the model is 25MB (ResNet50)
+    From this, we compute both times (multiplied by weighting parameters) in seconds
+    '''
+
     return {
-        "computation": computation_factor * n_data / client_capacity["computation"],
-        "communication": communication_factor / client_capacity["communication"],
+        "computation": client_capacity["computation"] * n_data * 3 / 1000 * computation_factor,
+        "communication": 25_000 / client_capacity["communication"] * 2 * communication_factor
     }
 
 class ClientConfig(BaseModel):
@@ -202,7 +208,7 @@ class Client(fl.client.NumPyClient):
 
         times = get_client_completion_time(
             single_client_device_capacity=self.client_capacity,
-            computation_factor=2000,
+            computation_factor=1,
             communication_factor=1,
             n_data=num_samples * config.run_config["epochs"]
         )
@@ -421,8 +427,9 @@ def get_client_generator(
             train,
             test,
             client_seed=client_seed_generator.randint(0, 2**32 - 1),
-            client_trace: client_traces[int(cid)-1],  # for some reason there is no cid 0 in these
-            client_capacity: client_capacities[int(cid)-1]  #                  so reduce cids by 1
+            # for some reason there is no cid 0 in these so reduce cids by 1
+            client_trace: client_traces[(int(cid)-1)%len(client_capacities)],
+            client_capacity: client_capacities[(int(cid)-1)%len(client_capacities)]
         )
 
     return client_generator
