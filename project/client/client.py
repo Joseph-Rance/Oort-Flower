@@ -202,8 +202,8 @@ class Client(fl.client.NumPyClient):
 
         times = get_client_completion_time(
             single_client_device_capacity=self.client_capacity,
-            computation_factor: 1,
-            communication_factor: 1,
+            computation_factor=2000,
+            communication_factor=1,
             n_data=num_samples * config.run_config["epochs"]
         )
         metrics["client_completion_time"] = times["communication"] + times["computation"]
