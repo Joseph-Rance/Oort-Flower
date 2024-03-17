@@ -77,43 +77,11 @@ class FedAvgTraces(FedAvg):
         log(INFO, f"Completion times of clients: {client_completion_times}; clock: {self.current_virtual_clock}")
         self.current_virtual_clock += np.max(client_completion_times)
 
-        return super().aggregate_fit(
+        loss_aggregated, metrics_aggregated = super().aggregate_fit(
             server_round=server_round,
             results=results,
             failures=failures,
         )
-
-    # mostly the same as in FedAvg
-    def aggregate_fit(
-        self,
-        server_round: int,
-        results: list[tuple[ClientProxy, FitRes]],
-        failures: list[tuple[ClientProxy, FitRes] | BaseException],
-    ) -> tuple[Parameters | None, dict[str, Scalar]]:
-
-        if not results:
-            return None, {}
-
-        if not self.accept_failures and failures:
-            return None, {}
-
-        if self.inplace:
-            aggregated_ndarrays = aggregate_inplace(results)
-        else:
-            weights_results = [
-                (parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples)
-                for _, fit_res in results
-            ]
-            aggregated_ndarrays = aggregate(weights_results)
-
-        parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
-
-        metrics_aggregated = {}
-        if self.fit_metrics_aggregation_fn:
-            fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
-            metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
-        elif server_round == 1:
-            log(WARNING, "No fit_metrics_aggregation_fn provided")
 
         metrics_aggregated["end_time"] = self.current_virtual_clock
 
