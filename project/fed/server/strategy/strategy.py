@@ -13,6 +13,7 @@ from flwr.common import (
 )
 from flwr.common.logger import log
 from flwr.server.client_proxy import ClientProxy
+from flwr.server.client_manager import ClientManager
 
 from flwr.server.strategy import FedAvg
 
@@ -25,18 +26,18 @@ class FedAvgTraces(FedAvg):
     """Configurable FedAvg strategy implementation."""
 
     def __init__(
-        *args: Any, **kwargs: Any
+        self, *args: Any, **kwargs: Any
     ) -> None:
-        self.current_virtual_clock = 0.0
+        self.current_virtual_clock = 0.
         super().__init__(*args, **kwargs)
 
     def configure_fit(
         self,
         server_round: int,
         parameters: Parameters,
-        client_manager: ActiveClientManager,
+        client_manager: ClientManager
     ) -> list[tuple[ClientProxy, FitIns]]:
-    
+
         config = {}
         if self.on_fit_config_fn is not None:
             config = self.on_fit_config_fn(server_round)
@@ -73,7 +74,7 @@ class FedAvgTraces(FedAvg):
         client_completion_times = [
             res.metrics["client_completion_time"] for _, res in results
         ]
-        log(INFO, f"Completion times of clients: {client_completion_times}")
+        log(INFO, f"Completion times of clients: {client_completion_times}; clock: {self.current_virtual_clock}")
         self.current_virtual_clock += np.max(client_completion_times)
 
         return super().aggregate_fit(
@@ -81,3 +82,39 @@ class FedAvgTraces(FedAvg):
             results=results,
             failures=failures,
         )
+
+    # mostly the same as in FedAvg
+    def aggregate_fit(
+        self,
+        server_round: int,
+        results: list[tuple[ClientProxy, FitRes]],
+        failures: list[tuple[ClientProxy, FitRes] | BaseException],
+    ) -> tuple[Parameters | None, dict[str, Scalar]]:
+
+        if not results:
+            return None, {}
+
+        if not self.accept_failures and failures:
+            return None, {}
+
+        if self.inplace:
+            aggregated_ndarrays = aggregate_inplace(results)
+        else:
+            weights_results = [
+                (parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples)
+                for _, fit_res in results
+            ]
+            aggregated_ndarrays = aggregate(weights_results)
+
+        parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
+
+        metrics_aggregated = {}
+        if self.fit_metrics_aggregation_fn:
+            fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
+            metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
+        elif server_round == 1:
+            log(WARNING, "No fit_metrics_aggregation_fn provided")
+
+        metrics_aggregated["end_time"] = self.current_virtual_clock
+
+        return loss_aggregated, metrics_aggregated

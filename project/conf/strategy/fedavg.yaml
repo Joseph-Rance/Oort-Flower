@@ -2,4 +2,4 @@
 name: FedAvg
 
 init:
-  _target_: project.fed.server.strategy.FedAvgTraces
+  _target_: project.fed.server.strategy.strategy.FedAvgTraces

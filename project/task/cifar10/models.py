@@ -66,4 +66,4 @@ class ResNet50(nn.Module):
         out = self.linear(out)
         return out
 
-get_resnet_50 = lazy_config_wrapper(lambda: resnet50(num_classes=10))
+get_resnet_50 = lazy_config_wrapper(lambda: ResNet50())

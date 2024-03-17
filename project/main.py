@@ -299,18 +299,6 @@ def main(cfg: DictConfig) -> None:
                 client_seed_generator=client_seed_rng,
             )
 
-            # Runs fit and eval on either one client or all of them
-            # Avoids launching ray for debugging purposes
-            test_client(
-                test_all_clients=cfg.debug_clients.all,
-                test_one_client=cfg.debug_clients.one,
-                client_generator=client_generator,
-                initial_parameters=initial_parameters,
-                total_clients=cfg.fed.num_total_clients,
-                on_fit_config_fn=on_fit_config_fn,
-                on_evaluate_config_fn=on_evaluate_config_fn,
-            )
-
             # Start Simulation
             # The ray_init_args are only necessary
             # If multiple ray servers run in parallel

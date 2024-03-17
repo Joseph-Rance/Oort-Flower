@@ -1,5 +1,7 @@
 import logging
+import math
 import random
+import numpy as np
 
 from flwr.common.logger import log
 from flwr.server.client_manager import SimpleClientManager
@@ -89,6 +91,13 @@ class OortClientManager(SimpleClientManager):
         if min_num_clients is None:
             min_num_clients = num_clients
 
+        if server_round is None:
+            server_round = 0
+
+        if current_virtual_clock is None:
+            current_virtual_clock = 0
+
+
         # wait for clients to be available
         self.wait_for(min_num_clients)
 
@@ -110,7 +119,7 @@ class OortClientManager(SimpleClientManager):
 
         for cid in cids:
             value = self.clients[cid].get_properties(ins, timeout=None)
-            if self.is_active(value.properties["traces"], self.current_virtual_clock):
+            if is_active(value.properties["traces"], current_virtual_clock):
                 if value.properties["rounds"] >= self.blacklist_rounds \
                         and len(self.blacklist) < self.max_blacklist_length:
                     self.blacklist.append(cid)
@@ -197,5 +206,5 @@ class OortClientManager(SimpleClientManager):
 
         client_list = [self.clients[cid] for cid in selected_cids]
 
-        log(INFO, "Sampled the following clients: %s", available_cids)
+        log(logging.INFO, "Sampled the following clients: %s", available_cids)
         return client_list
