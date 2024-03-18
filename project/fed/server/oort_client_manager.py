@@ -21,7 +21,7 @@ class OortClientManager(SimpleClientManager):
     def __init__(
         self,
         seed: int = 0,
-        blacklist_rounds: int = 100,
+        blacklist_rounds: int = 500,
         max_blacklist_length: int = 5,
         pacer_interval: float = 2,
         pacer_delta: float = 0.05,           # in interval [0, 1)

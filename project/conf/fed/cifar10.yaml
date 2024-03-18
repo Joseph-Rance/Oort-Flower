@@ -6,8 +6,8 @@ num_evaluate_clients_per_round: 0
 
 enable_resampling: false
 
-cpus_per_client: 2
-gpus_per_client: 0.2
+cpus_per_client: 4
+gpus_per_client: 0.5
 
 seed: 1337
 
