@@ -3,6 +3,7 @@
 Make sure the model and dataset are not loaded before the fit function.
 """
 
+from copy import copy
 from typing import Any
 import random
 from pathlib import Path
@@ -105,8 +106,7 @@ class Client(fl.client.NumPyClient):
         test: TestFunc,
         client_seed: int,
         client_trace: dict[str, Any],
-        client_capacity: dict[str, Any],
-        properties: dict[str, Any]
+        client_capacity: dict[str, Any]
     ) -> None:
         """Initialize the client.
 
@@ -146,7 +146,7 @@ class Client(fl.client.NumPyClient):
         self.client_seed = client_seed
         self.rng_tuple = get_isolated_rng_tuple(self.client_seed, obtain_device())
 
-        self.properties = properties
+        self.properties = PropertiesSingleton.get_properties(cid)
 
     def fit(
         self,
@@ -222,11 +222,11 @@ class Client(fl.client.NumPyClient):
         )
 
     def _get_lr(self, lr, training_round) -> float:
-        if training_round < 50*5:
+        if training_round < 100:
             return lr
-        if 49 < training_round < 90*5:
+        if 49 < training_round < 150:
             return lr * 0.2
-        if training_round < 100*5:
+        if training_round < 180:
             return lr * 0.01
         return lr * 0.001
 
@@ -402,15 +402,6 @@ def get_client_generator(
     with open("data/client_device_capacity.pkl", 'rb') as fin:
         client_capacities = pickle.load(fin)
 
-    properties = {
-        "last_sampled": None
-        "rounds": 0
-        "utility": 0
-        "time": 0
-    }
-
-    properties_lst = [copy(properties) for __ in range(num_clients)]
-
     def client_generator(cid: CID) -> Client:
         """Return a new Client.
 
@@ -434,8 +425,30 @@ def get_client_generator(
             client_seed=client_seed_generator.randint(0, 2**32 - 1),
             # for some reason there is no cid 0 in these so reduce cids by 1
             client_trace=client_traces[(int(cid)%len(client_capacities))+1],
-            client_capacity=client_capacities[(int(cid)%len(client_capacities))+1]
-            properties=properties_lst[int(cid)]
+            client_capacity=client_capacities[(int(cid)%len(client_capacities))+1],
         )
 
     return client_generator
+    
+class PropertiesSingleton:
+
+    client_properties = {}
+
+    def __init__(self):
+        raise RuntimeError("call get_properties on PropertiesSingleton")
+
+    @classmethod
+    def get_properties(cls, cid):
+
+        properties = 
+
+        if cid not in cls.client_properties.keys():
+            # copy might not be necessary here but better to be safe
+            cls.client_properties[cid] = copy({
+                "last_sampled": None,
+                "rounds": 0,
+                "utility": 0,
+                "time": 0
+            })
+
+        return cls.client_properties[cid]

@@ -162,7 +162,7 @@ class OortClientManager(SimpleClientManager):
                 utilities.append(-float("inf"))
 
             utilities.append(
-                (value.properties["utility"] - min_utility) / (max_utility - min_utility) \
+                (value.properties["utility"] - min_utility) / max(1e-5, max_utility - min_utility) \
               + math.sqrt(0.1*math.log(current_virtual_clock)/value.properties["last_sampled"]) \
               * max(1, (target_train_time/value.properties["time"]) ** self.alpha)
             )

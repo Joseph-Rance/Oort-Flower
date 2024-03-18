@@ -8,7 +8,7 @@ fit_config:
     batch_size: 32
   run_config:
     epochs: 2
-    learning_rate: 0.03
+    learning_rate: 0.005
   extra: {}
 
 eval_config:
