@@ -435,11 +435,8 @@ class PropertiesSingleton:
     def __init__(self):
         raise RuntimeError("call get_properties on PropertiesSingleton")
 
-    def get_field(cls, cid, field):
-        return cls.client_properties[cid][field]
-
-    def set_field(cls, cid, field, val):
-
+    @classmethod
+    def _init_cid(cls, cid: CID) -> None:
         if cid not in cls.client_properties.keys():
             # copy might not be necessary here but better to be safe
             cls.client_properties[cid] = copy({
@@ -449,7 +446,17 @@ class PropertiesSingleton:
                 "time": 0
             })
 
+    @classmethod
+    def get_field(cls, cid: CID, field: str) -> Any:
+        cls._init_cid(cid)
+        return cls.client_properties[cid][field]
+
+    @classmethod
+    def set_field(cls, cid: CID, field: str, val: Any) -> None:
+        cls._init_cid(cid)
         cls.client_properties[cid][field] = val
 
-    def get_client(cls, cid):
+    @classmethod
+    def get_client(cls, cid: CID) -> dict[str, Any]:
+        cls._init_cid(cid)
         return copy(cls.client_properties[cid])
