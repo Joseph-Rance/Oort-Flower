@@ -151,13 +151,6 @@ class Client(fl.client.NumPyClient):
         self.rounds = 0
         self.last_sampled = None
 
-        self.properties: dict[str, Scalar] = {
-            "traces": self.client_trace,
-            "utility": self.utility,
-            "time": self.time,
-            "rounds": self.rounds
-        }
-
     def fit(
         self,
         parameters: NDArrays,
@@ -355,7 +348,13 @@ class Client(fl.client.NumPyClient):
 
     def get_properties(self, config: dict) -> dict:
         """Implement how to get properties."""
-        return self.properties
+        return {
+            "traces": self.client_trace,
+            "utility": self.utility,
+            "time": self.time,
+            "rounds": self.rounds,
+            "last_sampled": self.last_sampled
+        }
 
 
 def get_client_generator(

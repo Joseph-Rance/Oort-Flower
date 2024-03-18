@@ -127,12 +127,12 @@ class OortClientManager(SimpleClientManager):
                     selectable_clients.append((cid, value))
 
         # on first round, return random clients (would be same if ran full Oort)
-        if server_round == 0:
+        if server_round <= 1:
             # NOTE: selectable_clients = available_clients on the first round
 
             # We may want to put a warning here if we do not return min_num_clients
             # It is omitted because it is expected to be thrown regularly
-            return selectable_clients[:num_clients]
+            return [self.clients[cid] for cid, __ in selectable_clients[:num_clients]]
 
         # clip utility values
         utility_bound_idx = int(len(selectable_clients) * self.utility_clip_prop)
@@ -150,7 +150,7 @@ class OortClientManager(SimpleClientManager):
         cutoff_time = int(len(selectable_clients) * self.train_time_cutoff)
         target_train_time = np.partition([
             c[1].properties["time"] for c in selectable_clients
-        ], cutoff)[cutoff]
+        ], cutoff_time)[cutoff_time]
 
         utilities = [c[1].properties["utility"] for c in selectable_clients]
         max_utility, min_utility = max(utilities), min(utilities)
@@ -162,9 +162,10 @@ class OortClientManager(SimpleClientManager):
                 utilities.append(-float("inf"))
 
             utilities.append(
-                value.properties["utility"] - min_utility) / (max_utility - min_utility) \
+                (value.properties["utility"] - min_utility) / (max_utility - min_utility) \
               + math.sqrt(0.1*math.log(current_virtual_clock)/value.properties["last_sampled"]) \
               * max(1, (target_train_time/value.properties["time"]) ** self.alpha)
+            )
 
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
 
