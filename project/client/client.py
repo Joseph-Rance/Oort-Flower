@@ -105,7 +105,8 @@ class Client(fl.client.NumPyClient):
         test: TestFunc,
         client_seed: int,
         client_trace: dict[str, Any],
-        client_capacity: dict[str, Any]
+        client_capacity: dict[str, Any],
+        properties: dict[str, Any]
     ) -> None:
         """Initialize the client.
 
@@ -145,11 +146,7 @@ class Client(fl.client.NumPyClient):
         self.client_seed = client_seed
         self.rng_tuple = get_isolated_rng_tuple(self.client_seed, obtain_device())
 
-        self.utility = 0
-        self.time = 0
-
-        self.rounds = 0
-        self.last_sampled = None
+        self.properties = properties
 
     def fit(
         self,
@@ -210,13 +207,13 @@ class Client(fl.client.NumPyClient):
         metrics["client_completion_time"] = times["communication"] + times["computation"]
 
         # (temp testing)
-        #if not is_active(self.client_trace, int(current_virtual_clock + metrics["client_completion_time"])):
+        #if not is_active(self.properties["traces"], int(current_virtual_clock + metrics["client_completion_time"])):
         #    raise IntentionalDropoutError(f"Client {self.cid} is no longer active")
 
-        self.last_sampled = current_virtual_clock
-        self.rounds += 1
-        self.utility = num_samples * metrics["train_loss"]
-        self.time = metrics["client_completion_time"]
+        self.properties["last_sampled"] = current_virtual_clock
+        self.properties["rounds"] += 1
+        self.properties["utility"] = num_samples * metrics["train_loss"]
+        self.properties["time"] = metrics["client_completion_time"]
 
         return (
             self.get_parameters({}),
@@ -348,13 +345,9 @@ class Client(fl.client.NumPyClient):
 
     def get_properties(self, config: dict) -> dict:
         """Implement how to get properties."""
-        return {
-            "traces": self.client_trace,
-            "utility": self.utility,
-            "time": self.time,
-            "rounds": self.rounds,
-            "last_sampled": self.last_sampled
-        }
+        properties = copy(self.properties)
+        properties["traces"] = self.client_trace
+        return properties
 
 
 def get_client_generator(
@@ -364,6 +357,7 @@ def get_client_generator(
     train: TrainFunc,
     test: TestFunc,
     client_seed_generator: random.Random,
+    num_clients: int
 ) -> ClientGen:
     """Return a function which creates a new Client.
 
@@ -408,6 +402,15 @@ def get_client_generator(
     with open("data/client_device_capacity.pkl", 'rb') as fin:
         client_capacities = pickle.load(fin)
 
+    properties = {
+        "last_sampled": None
+        "rounds": 0
+        "utility": 0
+        "time": 0
+    }
+
+    properties_lst = [copy(properties) for __ in range(num_clients)]
+
     def client_generator(cid: CID) -> Client:
         """Return a new Client.
 
@@ -432,6 +435,7 @@ def get_client_generator(
             # for some reason there is no cid 0 in these so reduce cids by 1
             client_trace=client_traces[(int(cid)%len(client_capacities))+1],
             client_capacity=client_capacities[(int(cid)%len(client_capacities))+1]
+            properties=properties_lst[int(cid)]
         )
 
     return client_generator

@@ -297,6 +297,7 @@ def main(cfg: DictConfig) -> None:
                 train=train_func,
                 test=test_func,
                 client_seed_generator=client_seed_rng,
+                num_clients=cfg.fed.num_total_clients
             )
 
             # Start Simulation
