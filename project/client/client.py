@@ -146,8 +146,6 @@ class Client(fl.client.NumPyClient):
         self.client_seed = client_seed
         self.rng_tuple = get_isolated_rng_tuple(self.client_seed, obtain_device())
 
-        self.properties = PropertiesSingleton.get_properties(cid)
-
     def fit(
         self,
         parameters: NDArrays,
@@ -210,10 +208,10 @@ class Client(fl.client.NumPyClient):
         #if not is_active(self.properties["traces"], int(current_virtual_clock + metrics["client_completion_time"])):
         #    raise IntentionalDropoutError(f"Client {self.cid} is no longer active")
 
-        self.properties["last_sampled"] = current_virtual_clock
-        self.properties["rounds"] += 1
-        self.properties["utility"] = num_samples * metrics["train_loss"]
-        self.properties["time"] = metrics["client_completion_time"]
+        PropertiesSingleton.set_field(self.cid, "last_sampled", current_virtual_clock)
+        PropertiesSingleton.set_field(self.cid, "rounds", PropertiesSingleton.get_field(cid, "rounds")+1)
+        PropertiesSingleton.set_field(self.cid, "utility", num_samples * metrics["train_loss"])
+        PropertiesSingleton.set_field(self.cid, "time", metrics["client_completion_time"])
 
         return (
             self.get_parameters({}),
@@ -345,7 +343,7 @@ class Client(fl.client.NumPyClient):
 
     def get_properties(self, config: dict) -> dict:
         """Implement how to get properties."""
-        properties = copy(self.properties)
+        properties = PropertiesSingleton.get_client(self.cid)
         properties["traces"] = self.client_trace
         return properties
 
@@ -437,10 +435,10 @@ class PropertiesSingleton:
     def __init__(self):
         raise RuntimeError("call get_properties on PropertiesSingleton")
 
-    @classmethod
-    def get_properties(cls, cid):
+    def get_field(cls, cid, field):
+        return cls.client_properties[cid][field]
 
-        properties = 
+    def set_field(cls, cid, field, val):
 
         if cid not in cls.client_properties.keys():
             # copy might not be necessary here but better to be safe
@@ -451,4 +449,7 @@ class PropertiesSingleton:
                 "time": 0
             })
 
-        return cls.client_properties[cid]
+        cls.client_properties[cid][field] = val
+
+    def get_client(cls, cid):
+        return copy(cls.client_properties[cid])

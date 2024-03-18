@@ -10,3 +10,5 @@ bash run_scripts/launch.sh
 
 #RUN WITH:
 #srun -c 16 --gres=gpu:2 -w ngongotaha bash run_scripts/slurm.sh
+
+# srun -c 1 --gres=gpu:0 -w ngongotaha bash run_scripts/download_cifar10.sh;srun -c 16 --gres=gpu:2 -w ngongotaha bash run_scripts/slurm.sh
