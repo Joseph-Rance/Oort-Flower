@@ -211,5 +211,5 @@ class OortClientManager(SimpleClientManager):
         selected_clients = selected_exploitation_clients.tolist() + selected_exploration_clients.tolist()
         client_list = [self.clients[cid] for cid in selected_clients]
 
-        log(logging.INFO, "Sampled the following clients: %s", available_cids)
+        log(logging.INFO, "Sampled the following clients: %s", selected_clients)
         return client_list
