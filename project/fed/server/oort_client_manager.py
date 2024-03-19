@@ -188,7 +188,7 @@ class OortClientManager(SimpleClientManager):
         higher_utilities = [properties[cid]["utility"] for cid in higher_clients]
         selected_exploitation_clients = np.random.choice(
             higher_clients,
-            int(num_clients*(1-self.epsilon)),
+            min(len(higher_clients), int(num_clients*(1-self.epsilon))),
             p=[u/sum(higher_utilities) for u in higher_utilities],
             replace=False
         ).tolist()
