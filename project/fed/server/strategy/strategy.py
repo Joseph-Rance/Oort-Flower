@@ -29,6 +29,7 @@ class FedAvgTraces(FedAvg):
         self, *args: Any, **kwargs: Any
     ) -> None:
         self.current_virtual_clock = 0.
+        self.client_properties = {}
         super().__init__(*args, **kwargs)
 
     def configure_fit(
@@ -53,6 +54,7 @@ class FedAvgTraces(FedAvg):
             min_num_clients=min_num_clients,
             server_round=server_round,
             current_virtual_clock=self.current_virtual_clock,
+            client_properties=self.client_properties,
         )
 
         return [(client, fit_ins) for client in clients]
@@ -71,9 +73,28 @@ class FedAvgTraces(FedAvg):
             except IntentionalDropoutError as e:
                 log(INFO, f"IntentionalDropoutError: {e}")
 
+        for result in results:
+            cid = result[0].cid
+
+            if cid not in self.client_properties.keys():
+                # copy might not be necessary here but better to be safe
+                self.client_properties[cid] = copy({
+                    "last_sampled": None,
+                    "rounds": 0,
+                    "utility": 0,
+                    "time": 0
+                })
+
+            # this is still the v. clock from the start of the round
+            self.client_properties[cid]["last_sampled"] = self.current_virtual_clock
+            self.client_properties[cid]["rounds"] += 1
+            self.client_properties[cid]["utility"] = result[1].metrics["utility"]
+            self.client_properties[cid]["time"] += result[1].metrics["client_completion_time"]
+
         client_completion_times = [
             res.metrics["client_completion_time"] for _, res in results
         ]
+
         log(INFO, f"Completion times of clients: {client_completion_times}; clock: {self.current_virtual_clock}")
         self.current_virtual_clock += np.max(client_completion_times)
 

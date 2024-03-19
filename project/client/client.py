@@ -208,10 +208,7 @@ class Client(fl.client.NumPyClient):
         #if not is_active(self.properties["traces"], int(current_virtual_clock + metrics["client_completion_time"])):
         #    raise IntentionalDropoutError(f"Client {self.cid} is no longer active")
 
-        PropertiesSingleton.set_field(self.cid, "last_sampled", current_virtual_clock)
-        PropertiesSingleton.set_field(self.cid, "rounds", PropertiesSingleton.get_field(cid, "rounds")+1)
-        PropertiesSingleton.set_field(self.cid, "utility", num_samples * metrics["train_loss"])
-        PropertiesSingleton.set_field(self.cid, "time", metrics["client_completion_time"])
+        metrics["utility"] = num_samples * metrics["train_loss"]
 
         return (
             self.get_parameters({}),
@@ -343,9 +340,7 @@ class Client(fl.client.NumPyClient):
 
     def get_properties(self, config: dict) -> dict:
         """Implement how to get properties."""
-        properties = PropertiesSingleton.get_client(self.cid)
-        properties["traces"] = self.client_trace
-        return properties
+        return {"traces": self.client_trace}
 
 
 def get_client_generator(
@@ -427,36 +422,3 @@ def get_client_generator(
         )
 
     return client_generator
-    
-class PropertiesSingleton:
-
-    client_properties = {}
-
-    def __init__(self):
-        raise RuntimeError("call get_properties on PropertiesSingleton")
-
-    @classmethod
-    def _init_cid(cls, cid: CID) -> None:
-        if cid not in cls.client_properties.keys():
-            # copy might not be necessary here but better to be safe
-            cls.client_properties[cid] = copy({
-                "last_sampled": None,
-                "rounds": 0,
-                "utility": 0,
-                "time": 0
-            })
-
-    @classmethod
-    def get_field(cls, cid: CID, field: str) -> Any:
-        cls._init_cid(cid)
-        return cls.client_properties[cid][field]
-
-    @classmethod
-    def set_field(cls, cid: CID, field: str, val: Any) -> None:
-        cls._init_cid(cid)
-        cls.client_properties[cid][field] = val
-
-    @classmethod
-    def get_client(cls, cid: CID) -> dict[str, Any]:
-        cls._init_cid(cid)
-        return copy(cls.client_properties[cid])

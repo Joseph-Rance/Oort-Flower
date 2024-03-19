@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 import math
 import random
 import numpy as np
@@ -85,7 +86,8 @@ class OortClientManager(SimpleClientManager):
         num_clients: int,
         min_num_clients: int | None = None,
         server_round: int | None = None,
-        current_virtual_clock: float | None = None
+        current_virtual_clock: float | None = None,
+        client_properties: dict[str, Any]
     ) -> list[ClientProxy]:
 
         if min_num_clients is None:
@@ -110,21 +112,17 @@ class OortClientManager(SimpleClientManager):
         selectable_clients = []
 
         ins = GetPropertiesIns(config={
-            "traces": "Dict[str, Any]",
-            "utility": "float",
-            "time": "float",
-            "rounds": "int",
-            "last_sampled": "float"
+            "traces": "Dict[str, Any]"
         })
 
         for cid in cids:
             value = self.clients[cid].get_properties(ins, timeout=None)
             if is_active(value.properties["traces"], current_virtual_clock):
-                if value.properties["rounds"] >= self.blacklist_rounds \
+                if properties[cid]["rounds"] >= self.blacklist_rounds \
                         and len(self.blacklist) < self.max_blacklist_length:
                     self.blacklist.append(cid)
                 else:
-                    selectable_clients.append((cid, value))
+                    selectable_clients.append(cid)
 
         # on first round, return random clients (would be same if ran full Oort)
         if server_round <= 1:
@@ -132,15 +130,15 @@ class OortClientManager(SimpleClientManager):
 
             # We may want to put a warning here if we do not return min_num_clients
             # It is omitted because it is expected to be thrown regularly
-            return [self.clients[cid] for cid, __ in selectable_clients[:num_clients]]
+            return [self.clients[cid] for cid in selectable_clients[:num_clients]]
 
         # clip utility values
         utility_bound_idx = int(len(selectable_clients) * self.utility_clip_prop)
         utility_clip_bound = np.partition([
-            v.properties["utility"] for __, v in selectable_clients
+            properties[cid]["utility"] for cid in selectable_clients
         ], utility_bound_idx)[utility_bound_idx]
-        for __, v in selectable_clients:
-            v.properties["utility"] = max(v.properties["utility"], utility_clip_bound)
+        for cid in selectable_clients:
+            properties[cid]["utility"] = max(properties[cid]["utility"], utility_clip_bound)
 
         self.run_pacer(server_round)  # updates self.train_time_cutoff
 
@@ -149,22 +147,22 @@ class OortClientManager(SimpleClientManager):
         # implementation provided by the authors on GitHub
         cutoff_time = int(len(selectable_clients) * self.train_time_cutoff)
         target_train_time = np.partition([
-            c[1].properties["time"] for c in selectable_clients
+            properties[cid]["time"] for cid in selectable_clients
         ], cutoff_time)[cutoff_time]
 
-        utilities = [c[1].properties["utility"] for c in selectable_clients]
+        utilities = [properties[cid]["utility"] for cid in selectable_clients]
         max_utility, min_utility = max(utilities), min(utilities)
 
         # update client to include the temporal uncertainty and global system utility terms
         utilities = []
-        for client, value in selectable_clients:
-            if value.properties["last_sampled"] == None:
+        for cid in selectable_clients:
+            if properties[cid]["last_sampled"] == None:
                 utilities.append(-float("inf"))
 
             utilities.append(
-                (value.properties["utility"] - min_utility) / max(1e-5, max_utility - min_utility) \
-              + math.sqrt(0.1*math.log(current_virtual_clock)/value.properties["last_sampled"]) \
-              * max(1, (target_train_time/value.properties["time"]) ** self.alpha)
+                (properties[cid]["utility"] - min_utility) / max(1e-5, max_utility - min_utility) \
+              + math.sqrt(0.1*math.log(current_virtual_clock)/properties[cid]["last_sampled"]) \
+              * max(1, (target_train_time/properties[cid]["time"]) ** self.alpha)
             )
 
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
@@ -174,25 +172,24 @@ class OortClientManager(SimpleClientManager):
         cutoff_utility = np.partition(utilities, idx)[idx] * self.utility_cutoff_prop
 
         higher_clients = [
-            c for i, c in enumerate(selectable_clients) if utilities[i] >= cutoff_utility
+            cid for i, cid in enumerate(selectable_clients) if utilities[i] >= cutoff_utility
         ]
-        higher_utilities = [c[1].properties["utility"] for c in higher_clients]
+        higher_utilities = [properties[cid]["utility"] for cid in higher_clients]
         selected_exploitation_clients = np.random.choice(
             higher_clients,
             int(num_clients*(1-self.epsilon)),
             p=[u/sum(higher_utilities) for u in higher_utilities]
         )
-        selected_exploitation_cids = [c for c, __ in selected_exploitation_clients]
 
-        expl_utilities = [i[1].properties["utility"] for c in higher_clients]
+        expl_utilities = [properties[cid]["utility"] for cid in higher_clients]
         self.curr_pacer_util += sum(expl_utilities)/len(expl_utilities)
 
         # sample unexplored clients by speed
         remaining_clients = [
-            (c,v) for c, v in selectable_clients if client not in selected_exploitation_cids
+            cid for cid in selectable_clients if cid not in selected_exploitation_clients
         ]
         remaining_speeds = [
-            max(1, (target_train_time/v.properties["time"]) ** self.alpha) for __, v in clients
+            max(1, (target_train_time/properties[cid]["time"]) ** self.alpha) for cid in clients
         ]
 
         selected_exploration_clients = np.random.choice(
@@ -202,10 +199,8 @@ class OortClientManager(SimpleClientManager):
         )
 
         # combine exploration and exploitation samples
-        selected_clients = selected_exploitation_cids + selected_exploration_clients
-        selected_cids = [c for c, __ in selected_clients]
-
-        client_list = [self.clients[cid] for cid in selected_cids]
+        selected_clients = selected_exploitation_clients + selected_exploration_clients
+        client_list = [self.clients[cid] for cid in selected_clients]
 
         log(logging.INFO, "Sampled the following clients: %s", available_cids)
         return client_list
