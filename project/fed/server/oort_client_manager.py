@@ -158,7 +158,7 @@ class OortClientManager(SimpleClientManager):
             properties[cid]["time"] for cid in selectable_clients
                 if properties[cid]["last_sampled"] is not None
         ]
-        cutoff_time = int(len(times) * self.train_time_cutoff)
+        cutoff_time = min(int(len(times) * self.train_time_cutoff), times(times)-1)
         target_train_time = np.partition(times, cutoff_time)[cutoff_time]
 
         utilities = [properties[cid]["utility"] for cid in selectable_clients]
