@@ -36,7 +36,7 @@ class FedAvgTraces(FedAvg):
                 "last_sampled": None,
                 "rounds": 0,
                 "utility": 0,
-                "time": 0
+                "time": 1e5
             }) for cid in range(num_clients)
         }
         super().__init__(*args, **kwargs)

@@ -152,10 +152,12 @@ class OortClientManager(SimpleClientManager):
         # compute preferred train time
         # NOTE: this differs from Alg 1 in paper. Instead, I have followed the slighly modified
         # implementation provided by the authors on GitHub
-        cutoff_time = int(len(selectable_clients) * self.train_time_cutoff)
-        target_train_time = np.partition([
+        times = [
             properties[cid]["time"] for cid in selectable_clients
-        ], cutoff_time)[cutoff_time]
+                if properties[cid]["last_sampled"] is not None
+        ]
+        cutoff_time = int(len(times) * self.train_time_cutoff)
+        target_train_time = np.partition(times, cutoff_time)[cutoff_time]
 
         utilities = [properties[cid]["utility"] for cid in selectable_clients]
         max_utility, min_utility = max(utilities), min(utilities)
@@ -163,14 +165,14 @@ class OortClientManager(SimpleClientManager):
         # update client to include the temporal uncertainty and global system utility terms
         utilities = []
         for cid in selectable_clients:
-            if properties[cid]["last_sampled"] == None:
+            if properties[cid]["last_sampled"] is None:
                 utilities.append(-float("inf"))
-
-            utilities.append(
-                (properties[cid]["utility"] - min_utility) / max(1e-5, max_utility - min_utility) \
-              + math.sqrt(0.1*math.log(current_virtual_clock)/max(1e-5, properties[cid]["last_sampled"])) \
-              * max(1, (target_train_time/max(1e-5, properties[cid]["time"])) ** self.alpha)
-            )
+            else:
+                utilities.append(
+                    (properties[cid]["utility"] - min_utility) / max(1e-5, max_utility - min_utility) \
+                + math.sqrt(0.1*math.log(current_virtual_clock)/max(1e-5, properties[cid]["last_sampled"])) \
+                * max(1, (target_train_time/max(1e-5, properties[cid]["time"])) ** self.alpha)
+                )
 
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
 
