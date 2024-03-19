@@ -87,7 +87,7 @@ class OortClientManager(SimpleClientManager):
         min_num_clients: int | None = None,
         server_round: int | None = None,
         current_virtual_clock: float | None = None,
-        client_properties: dict[str, Any]
+        properties: dict[str, Any] | None = None
     ) -> list[ClientProxy]:
 
         if min_num_clients is None:
@@ -99,6 +99,9 @@ class OortClientManager(SimpleClientManager):
         if current_virtual_clock is None:
             current_virtual_clock = 0
 
+        if num_clients == 0:
+            return []
+
 
         # wait for clients to be available
         self.wait_for(min_num_clients)
@@ -108,8 +111,8 @@ class OortClientManager(SimpleClientManager):
         for _ in range(server_round):
             random.shuffle(cids)
 
-        # get list of which clients can be selected *IN THE SIMULATUION* (active & not blacklisted)
-        selectable_clients = []
+        # get list of which clients are active *IN THE SIMULATUION*
+        available_clients = []
 
         ins = GetPropertiesIns(config={
             "traces": "Dict[str, Any]"
@@ -118,19 +121,23 @@ class OortClientManager(SimpleClientManager):
         for cid in cids:
             value = self.clients[cid].get_properties(ins, timeout=None)
             if is_active(value.properties["traces"], current_virtual_clock):
-                if properties[cid]["rounds"] >= self.blacklist_rounds \
-                        and len(self.blacklist) < self.max_blacklist_length:
-                    self.blacklist.append(cid)
-                else:
-                    selectable_clients.append(cid)
+                available_clients.append(cid)
 
         # on first round, return random clients (would be same if ran full Oort)
         if server_round <= 1:
-            # NOTE: selectable_clients = available_clients on the first round
-
             # We may want to put a warning here if we do not return min_num_clients
             # It is omitted because it is expected to be thrown regularly
-            return [self.clients[cid] for cid in selectable_clients[:num_clients]]
+            return [self.clients[cid] for cid in available_clients[:num_clients]]
+
+        # get list of which clients can be selected *IN THE SIMULATUION* (active & not blacklisted)
+        selectable_clients = []
+
+        for cid in available_clients:
+            if properties[cid]["rounds"] >= self.blacklist_rounds \
+                    and len(self.blacklist) < self.max_blacklist_length:
+                self.blacklist.append(cid)
+            else:
+                selectable_clients.append(cid)
 
         # clip utility values
         utility_bound_idx = int(len(selectable_clients) * self.utility_clip_prop)
@@ -161,8 +168,8 @@ class OortClientManager(SimpleClientManager):
 
             utilities.append(
                 (properties[cid]["utility"] - min_utility) / max(1e-5, max_utility - min_utility) \
-              + math.sqrt(0.1*math.log(current_virtual_clock)/properties[cid]["last_sampled"]) \
-              * max(1, (target_train_time/properties[cid]["time"]) ** self.alpha)
+              + math.sqrt(0.1*math.log(current_virtual_clock)/max(1e-5, properties[cid]["last_sampled"])) \
+              * max(1, (target_train_time/max(1e-5, properties[cid]["time"])) ** self.alpha)
             )
 
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
@@ -189,7 +196,7 @@ class OortClientManager(SimpleClientManager):
             cid for cid in selectable_clients if cid not in selected_exploitation_clients
         ]
         remaining_speeds = [
-            max(1, (target_train_time/properties[cid]["time"]) ** self.alpha) for cid in clients
+            max(1, (target_train_time/max(1e-5, properties[cid]["time"])) ** self.alpha) for cid in remaining_clients
         ]
 
         selected_exploration_clients = np.random.choice(

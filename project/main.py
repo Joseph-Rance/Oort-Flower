@@ -242,6 +242,7 @@ def main(cfg: DictConfig) -> None:
             # in the cfg.task
             strategy = instantiate(
                 cfg.strategy.init,
+                num_clients=cfg.fed.num_total_clients,
                 fraction_fit=sys.float_info.min,
                 fraction_evaluate=sys.float_info.min,
                 min_fit_clients=cfg.fed.num_clients_per_round,
