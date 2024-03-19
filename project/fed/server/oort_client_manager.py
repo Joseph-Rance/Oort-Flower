@@ -123,6 +123,8 @@ class OortClientManager(SimpleClientManager):
             if is_active(value.properties["traces"], current_virtual_clock):
                 available_clients.append(cid)
 
+        log(logging.INFO, "Available clients: %s", available_clients)
+
         # on first round, return random clients (would be same if ran full Oort)
         if server_round <= 1:
             # We may want to put a warning here if we do not return min_num_clients
@@ -204,7 +206,7 @@ class OortClientManager(SimpleClientManager):
 
         selected_exploration_clients = np.random.choice(
             remaining_clients,
-            num_clients-len(selected_exploitation_clients),
+            min(len(remaining_clients), num_clients-len(selected_exploitation_clients)),
             p=[v/sum(remaining_speeds) for v in remaining_speeds],
             replace=False
         ).tolist()
