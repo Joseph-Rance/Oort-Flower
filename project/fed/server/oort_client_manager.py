@@ -187,8 +187,9 @@ class OortClientManager(SimpleClientManager):
         selected_exploitation_clients = np.random.choice(
             higher_clients,
             int(num_clients*(1-self.epsilon)),
-            p=[u/sum(higher_utilities) for u in higher_utilities]
-        )
+            p=[u/sum(higher_utilities) for u in higher_utilities],
+            replace=False
+        ).tolist()
 
         expl_utilities = [properties[cid]["utility"] for cid in higher_clients]
         self.curr_pacer_util += sum(expl_utilities)/len(expl_utilities)
@@ -204,11 +205,12 @@ class OortClientManager(SimpleClientManager):
         selected_exploration_clients = np.random.choice(
             remaining_clients,
             num_clients-len(selected_exploitation_clients),
-            p=[v/sum(remaining_speeds) for v in remaining_speeds]
-        )
+            p=[v/sum(remaining_speeds) for v in remaining_speeds],
+            replace=False
+        ).tolist()
 
         # combine exploration and exploitation samples
-        selected_clients = selected_exploitation_clients.tolist() + selected_exploration_clients.tolist()
+        selected_clients = selected_exploitation_clients + selected_exploration_clients
         client_list = [self.clients[cid] for cid in selected_clients]
 
         log(logging.INFO, "Sampled the following clients: %s", selected_clients)

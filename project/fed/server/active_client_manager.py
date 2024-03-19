@@ -1,5 +1,6 @@
 """A client manager that guarantees deterministic client sampling."""
 
+from typing import Any
 import logging
 import random
 
@@ -28,6 +29,7 @@ class ActiveClientManager(SimpleClientManager):
         min_num_clients: int | None = None,
         server_round: int | None = None,
         current_virtual_clock: float | None = None,
+        **kwargs: Any
     ) -> list[ClientProxy]:
 
         if min_num_clients is None:
