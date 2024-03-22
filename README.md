@@ -23,4 +23,6 @@ The default configuration uses random sampling with $\sigma=2$. Oort can be acti
 
 This codebase closely follows the structure of the [CaMLSys template](https://github.com/camlsys/fl-project-template).
 
-The main additions are discussed in my technical report, and can be found in `project/task/cifar10` (CIFAR10 model implementation), `project/task/speech` (Google speech model implementation), `project/fed/server/stategy/strategy.py` (custom strategy for aggregating client utility values), and `project/fed/server/oort_client_manager.py` (Oort sampler implementation).
+THE MAIN CONTRIBUTION OF THIS PROJECT IS IN `project/fed/server/oort_client_manager.py`.
+
+The main additions are discussed in my technical report, and can be found in `project/task/cifar10` (CIFAR10 model implementation), `project/task/speech` (Google speech model implementation), and `project/fed/server/stategy/strategy.py` (custom strategy for aggregating client utility values).

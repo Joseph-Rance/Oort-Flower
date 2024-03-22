@@ -108,6 +108,7 @@ class OortClientManager(SimpleClientManager):
         # wait for clients to be available
         self.wait_for(min_num_clients)
 
+        # shuffle client order (only necessary for early rounds, but run for all just in case)
         cids = list(self.clients)
         random.seed(self.seed)
         for _ in range(server_round):
@@ -160,6 +161,7 @@ class OortClientManager(SimpleClientManager):
             properties[cid]["time"] for cid in selectable_clients
                 if properties[cid]["last_sampled"] is not None
         ]
+
         cutoff_time = min(int(len(times) * self.train_time_cutoff), len(times)-1)
         target_train_time = np.partition(times, cutoff_time)[cutoff_time]
 
