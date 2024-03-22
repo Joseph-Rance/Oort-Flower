@@ -1,3 +1,5 @@
+"""Implementation of Oort sampling as a client manager"""
+
 import logging
 from typing import Any
 import math
