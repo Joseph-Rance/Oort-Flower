@@ -3,7 +3,7 @@ defaults:
   - _self_
   - task: speech
   - fed: speech
-  - strategy: fedavg # (temp testing) fedyogi
+  - strategy: fedavg
   - dataset: speech
 
 hydra:

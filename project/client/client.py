@@ -204,9 +204,8 @@ class Client(fl.client.NumPyClient):
         )
         metrics["client_completion_time"] = times["communication"] + times["computation"]
 
-        # (temp testing)
-        #if not is_active(self.properties["traces"], int(current_virtual_clock + metrics["client_completion_time"])):
-        #    raise IntentionalDropoutError(f"Client {self.cid} is no longer active")
+        if not is_active(self.properties["traces"], int(current_virtual_clock + metrics["client_completion_time"])):
+            raise IntentionalDropoutError(f"Client {self.cid} is no longer active")
 
         metrics["utility"] = num_samples * metrics["train_loss"]
 
