@@ -1,4 +1,8 @@
-"""ResNet-50 model for CIFAR10 dataset."""
+"""ResNet-50 model for CIFAR10 dataset.
+
+NOTE: this code is not original to this project. It is copied from a previous project, where it was
+produced as a modified version of the PyTorch ResNet50 implementation.
+"""
 
 from project.utils.utils import lazy_config_wrapper
 

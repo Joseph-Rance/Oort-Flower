@@ -172,8 +172,8 @@ class OortClientManager(SimpleClientManager):
             else:
                 utilities.append(
                     (properties[cid]["utility"] - min_utility) / max(1e-5, max_utility - min_utility) \
-                + math.sqrt(0.1*math.log(current_virtual_clock)/max(1e-5, properties[cid]["last_sampled"])) \
-                * max(1, (target_train_time/max(1e-5, properties[cid]["time"])) ** self.alpha)
+                * max(1, (target_train_time/max(1e-5, properties[cid]["time"])) ** self.alpha) \
+                + math.sqrt(0.1*math.log(current_virtual_clock)/max(1e-5, properties[cid]["last_sampled"]))
                 )
 
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)

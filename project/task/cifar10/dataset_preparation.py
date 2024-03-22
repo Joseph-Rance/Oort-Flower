@@ -218,8 +218,6 @@ def download_and_preprocess(cfg: DictConfig) -> None:
         sigma=2.0,
     )
 
-    print([len(i) for i in train_sets])
-
     # 2. Save the datasets
     # unnecessary for this small dataset, but useful for large datasets
     partition_dir = Path(cfg.dataset.partition_dir)
